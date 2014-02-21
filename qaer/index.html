@@ -1,0 +1,99 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <script src="https://ajax.googleapis.com/ajax/libs/jquery/1.7.2/jquery.min.js"></script>
+    <script type='text/javascript' src='https://api.stackexchange.com/js/2.0/all.js'></script>
+    <script>
+        var OAUTHURL    =   'https://stackexchange.com/oauth?';
+        var SCOPE       =   'no_expiry';
+        var CLIENTID    =   '2640';
+        var REDIRECT    =   'http://dogsundertrees.com/work/qaer';
+        var CHANNELURL  =   'http://dogsundertrees.com/work/qaer/blank';
+        var KEY         =   'wTz9tlrUI3popRKxCZQzKA((';
+        // var TYPE        =   'token';
+        var TYPE        =   'code';
+        // var _url        =   OAUTHURL + 'scope=' + SCOPE + '&client_id=' + CLIENTID + '&redirect_uri=' + REDIRECT + '&response_type=' + TYPE;
+        var _url        = OAUTHURL + 'client_id=' + CLIENTID + '&scope=' + SCOPE + '&redirect_uri=' + REDIRECT;
+        // _url = https://stackexchange.com/oauth?client_id=2640&scope=no-expiry&redirect_uri=http://dogsundertrees.com/work/qaer
+
+        function html_output(inp) {
+            document.body.appendChild(document.createElement('pre')).innerHTML = inp;
+        }
+
+
+        $(function(){
+            // Initialize library
+            SE.init({
+                // Parameters obtained by registering an app, these are specific to the SE
+                //   documentation site
+                clientId: CLIENTID,
+                key: KEY,
+                // Used for cross domain communication, it will be validated
+                channelUrl: CHANNELURL,
+                // Called when all initialization is finished
+                complete: function(data) {
+                    $('#login-button')
+                        .removeAttr('disabled')
+                        .text('Run Example With Version '+data.version);
+                }
+            });
+
+            // Attach click handler to login button
+            $('#login-button').click(function() {
+/*
+For this to work (this is an IMPLICIT call), the settings on http://stackapps.com/apps/oauth/view/2640
+MUST allow client side only. This took me HOURS to figure out - was getting an error message
+
+*/
+                // Make the authentication call, note that being in an onclick handler
+                //   is important; most browsers will hide windows opened without a
+                //   'click blessing'
+                SE.authenticate({
+                    success: function(data) {
+                         $('#login-button').hide();
+                            $("#msg").text('You are logged in with account id = ' +
+                            data.networkUsers[0].account_id + ', got access token = ' +
+                            data.accessToken);
+                        // alert(
+                        //     'User Authorized with account id = ' +
+                        //     data.networkUsers[0].account_id + ', got access token = ' +
+                        //     data.accessToken
+                        // );
+                    },
+                    error: function(data) {
+                        alert('An error occurred:\n' + data.errorName + '\n' + data.errorMessage);
+                    },
+                    networkUsers: true
+                });
+
+            });
+
+            $('#search').click(function() {
+                $.ajax(
+                    {
+                        url: 'http://api.stackexchange.com/2.2/questions?order=desc&sort=activity&tagged=' +  $('#tags').val() + '&site=stackoverflow',
+                        datatype: 'jsonp',
+                        success: function(response) {
+                            for (var i = 0; i < response.items.length; i++) {
+                                html_output(JSON.stringify(response.items[i].title));
+                            };
+                        }
+                    }
+                );
+            });
+});
+
+    </script>
+</head>
+<body>
+<button id="login-button">Click here to login. This is Version </button><br />
+<div id="msg"></div>
+<div id="question">Enter tag to search questions for: <input type="text" id="tags" /> <button id="search">Search</button></div>
+<div id="answers"><h4>These questions have the tag {} in them </h4>
+<ul>
+</ul>
+</div>
+
+
+</body>
+</html>
